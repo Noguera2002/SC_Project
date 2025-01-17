@@ -1,4 +1,4 @@
-#Install required packages if not already installed
+# Install required packages if not already installed
 if (!requireNamespace("Seurat", quietly = TRUE)) {
   install.packages("Seurat")
 }
@@ -8,19 +8,22 @@ if (!requireNamespace("Signac", quietly = TRUE)) {
 if (!requireNamespace("hdf5r", quietly = TRUE)) {
   install.packages("hdf5r")
 }
-if (!requireNamespace("BiocManager", quietly = TRUE))
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
-BiocManager::install("JASPAR2020")
-
-
-BiocManager::install("scDblFinder")
-BiocManager::install("SingleCellExperiment")
+}
+if (!requireNamespace("JASPAR2020", quietly = TRUE)) {
+  BiocManager::install("JASPAR2020")
+}
+if (!requireNamespace("scDblFinder", quietly = TRUE)) {
+  BiocManager::install("scDblFinder")
+}
+if (!requireNamespace("SingleCellExperiment", quietly = TRUE)) {
+  BiocManager::install("SingleCellExperiment")
+}
 
 library(scDblFinder)
 library(SingleCellExperiment)
 library(scater)
-
-
 library(hdf5r)
 library(Seurat)
 library(Signac)
@@ -28,19 +31,27 @@ library(ggplot2)
 library(JASPAR2020)
 library(Matrix)
 
+### 1. Load the ATAC Seurat object 
+atac_data<- readRDS("Data/ATAC.rds")
+head(atac_data@meta.data)
 
-data<- readRDS("../Data/ATAC.rds")
+### 2. Quality control
+# Map Ensembl IDs to Gene Symbols
+gene_symbols <- mapIds(
+  org.Hs.eg.db,
+  keys = rownames(atac_data),
+  column = "SYMBOL",
+  keytype = "ENSEMBL",
+  multiVals = "first"
+)
 
-data@meta.data
+# Identify ribosomal genes
+ribo_genes <- names(gene_symbols[grep("^RP[SL]", gene_symbols)])
 
-#Quality control moment
 
 
-VlnPlot(data, features = c("nFeature_ATAC", "nCount_ATAC","TSS_percentile","nucleosome_signal", "percent_mt"), ncol = 5)
-
-#I dropped the  RNA counts so that it doesnt affect the analysis on the ATAC (variable features etc)
-
-data@meta.data <- data@meta.data[, !(colnames(data@meta.data) %in% c("nCount_RNA", "nFeature_RNA"))]
+# Dropped the  RNA counts so that it doesn't affect the analysis on the ATAC (variable features etc)
+atac_data@meta.data <- atac_data@meta.data[, !(colnames(atac_data@meta.data) %in% c("nCount_RNA", "nFeature_RNA"))]
 
 data.filtered <- subset(data, subset = nCount_ATAC > 200  & nCount_ATAC < 100000 & nucleosome_signal<3 &percent_mt < 5)
 

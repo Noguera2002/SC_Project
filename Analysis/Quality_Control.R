@@ -10,11 +10,12 @@ library(scater)
 library(org.Hs.eg.db)
 library(Matrix)
 library(scales)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
 
 ### 1. Load the RNA Seurat object 
 HCC_data <- readRDS("Data/scRNA.rds") 
 head(HCC_data@meta.data) # Investigate metadata
-
 
 
 ### 2. Quality Control
@@ -49,9 +50,12 @@ VlnPlot(HCC_data, features = c("nFeature_RNA", "nCount_RNA", "percent_mt", "perc
 HCC_data.filtered <- subset(
   HCC_data,
   subset = nFeature_RNA > 500 & nFeature_RNA < 7500 &
-    percent_mt < 2 &
-    percent_ribo < 20
+    percent_mt < 2 &   # I believe we can go higher, like 5
+    percent_ribo < 20   # I believe we can go lower, like 2 or 5
 )
+
+# Visualize QC metrics after filtering
+VlnPlot(HCC_data.filtered, features = c("nFeature_RNA", "nCount_RNA", "percent_mt", "percent_ribo"), ncol = 3)
 
 # Removal of low-quality genes
 C <- HCC_data.filtered@assays$RNA@counts
@@ -180,26 +184,3 @@ FeaturePlot(HCC_data.filtered, features = "scDblFinder.score")
 
 # Save the filtered Seurat object
 saveRDS(HCC_data.filtered, "Data/scRNA_filtered.rds")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
