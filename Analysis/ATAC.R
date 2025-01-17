@@ -138,6 +138,7 @@ data.filtered <- RunUMAP(data.filtered, reduction = "LSI", dims = 2:10,
 # Plot the UMAP
 p2 <- DimPlot(data.filtered, group.by = "age_group",reduction = "UMAP")  # Use "umap.atac" for the custom reduction name
 p2
+DimPlot(data.filtered, reduction = "UMAP", split.by = "age_group")
 
 
 saveRDS(data.filtered, "ATAC_filtered.rds")
@@ -148,8 +149,22 @@ saveRDS(data.filtered, "ATAC_filtered.rds")
 # Cell annotation
 ---------------------------------------------
 
-data<- readRDS("../Data/ATAC_filtered.rds")
+data.filtered<- readRDS("ATAC_filtered.rds")
 
+#split the data by the age group
+
+data.filtered[["RNA"]] <- split(data.filtered[["RNA"]], f = data.filtered$age_group)
+
+data.filtered[["RNA"]] <- JoinLayers(data.filtered[["RNA"]])
+
+#This is how we perform normalization in scATAC data
+DefaultAssay(data.filtered) <- "RNA"
+data.filtered[["RNA"]] <- SelectAssayLayer(data.filtered[["RNA"]], layer = "data")
+
+data.filtered <- RunTFIDF(data.filtered, method = 3)
+
+# Singular Value Decomposition (dimensionality reduction) instead of PCA
+data.filtered <- RunSVD(data.filtered)
 
 
 
