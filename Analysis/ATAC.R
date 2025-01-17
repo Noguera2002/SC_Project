@@ -26,10 +26,12 @@ library(Seurat)
 library(Signac)
 library(ggplot2)
 library(JASPAR2020)
+library(Matrix)
 
-data<- readRDS("../Data/fuck.rds")
+
+data<- readRDS("../Data/ATAC.rds")
+
 data@meta.data
-unique(data@meta.data$donor_id)
 
 #Quality control moment
 
@@ -45,8 +47,10 @@ data.filtered <- subset(data, subset = nCount_ATAC > 200  & nCount_ATAC < 100000
 
 #Cells that are present in less than 10 samples are excluded
 
+# Filter genes expressed in at least 10 cells
+
+# Efficiently calculate the number of cells expressing each gene in the sparse matrix
 data.filtered <- data.filtered[rowSums(data.filtered@assays$RNA@counts > 0) >= 10, ]
-dim(data.filtered)
 
 
 VlnPlot(data.filtered, features = c("nFeature_ATAC", "nCount_ATAC","TSS_percentile","nucleosome_signal", "percent_mt"), ncol = 5)
@@ -54,8 +58,6 @@ VlnPlot(data.filtered, features = c("nFeature_ATAC", "nCount_ATAC","TSS_percenti
 dim(data)
 dim(data.filtered)
 
-
-#Preprocess the scATAC-seq data using Signac and Seurat, following steps 0 to 3. Note that gene annotation information has already been added to this scATAC-seq dataset.
 
 
 #This is how we perform normalization in scATAC data
@@ -99,7 +101,6 @@ data.filtered <- RunSVD(data.filtered)
 
 # We exclude the first dimension as this is typically correlated with sequencing depth
 
-
 data.filtered <- RunUMAP(data.filtered, reduction = "lsi", dims = 2:10, reduction.name = "umap.atac", reduction.key = "atacUMAP_")
 p1 <- DimPlot(data.filtered, reduction = "umap") 
 p1
@@ -108,14 +109,14 @@ p1
 
 
 
-data.filtered$donor_id <- paste0(data.filtered$donor_id, "_", data.filtered$age_group)
+data.filtered$sample <- paste0(data.filtered$donor_id, "_", data.filtered$age_group)
 sce <- as.SingleCellExperiment(data.filtered)
 #Store the highly variable features as top.var (required to use with scDblFinder)
 top.var <- VariableFeatures(data.filtered)
 
 
 set.seed(123)
-sce.dbl <- scDblFinder(sce,samples="donor_id", clusters=colLabels(sce))
+sce.dbl <- scDblFinder(sce, samples="sample", clusters=colLabels(sce))
 #Plot the doublets
 
 plotUMAP(sce.dbl, colour_by="scDblFinder.score")
@@ -130,50 +131,35 @@ plotUMAP(sce.filtered, colour_by="scDblFinder.score")
 # Convert filtered SCE to Seurat object
 data.filtered <- as.Seurat(sce.filtered)
 
-# Optional: Transfer metadata to Seurat object
-data.filtered$doublet_class <- sce.filtered$scDblFinder.class  # Already filtered as singlets
-data.filtered$donor_id <- sce.filtered$donor_id
-
 # Proceed with UMAP and plotting
 data.filtered <- RunUMAP(data.filtered, reduction = "LSI", dims = 2:10, 
-                         reduction.name = "umap.atac", reduction.key = "atacUMAP_")
+                         reduction.name = "umap.atac", reduction.key = "umapatac_")
 
 # Plot the UMAP
-p1 <- DimPlot(data.filtered, group.by = "age_group" , reduction = "umap.atac")  # Use "umap.atac" for the custom reduction name
-p1
+p2 <- DimPlot(data.filtered, group.by = "age_group",reduction = "UMAP")  # Use "umap.atac" for the custom reduction name
+p2
+
+
+saveRDS(data.filtered, "ATAC_filtered.rds")
+
+
+---------------------------------------------
+  
+# Cell annotation
+---------------------------------------------
+
+data<- readRDS("../Data/ATAC_filtered.rds")
 
 
 
 
 
----------------------------------------------------------------------------------
-if (!requireNamespace("TFBSTools", quietly = TRUE)) {
-  BiocManager::install("TFBSTools")
-}
 
 
-#TF motif  enrichment analysis
-BiocManager::install("JASPAR2020")
-library(JASPAR2020)
-library(TFBSTools)
-
-motifs <- getMatrixSet(
-  JASPAR2020,
-  opts = list(
-    collection = "CORE",
-    tax_group = "vertebrates"
-  )
-)
 
 
-# Add a Motif object to the dataset
-data.filtered <- AddMotifs(
-  object = data.filtered,
-  genome = BSgenome.Hsapiens.UCSC.hg38, # Replace with your genome build
-  pfm = motifs
-)
 
-Assays(data.filtered)
+
 
 
 #Create the geneActivity matrix
