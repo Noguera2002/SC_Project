@@ -1,0 +1,256 @@
+---
+title: "RNA"
+format: html
+editor: visual
+---
+
+```{r}
+library(Seurat)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(BiocSingular)
+library(scDblFinder)
+library(SingleCellExperiment)
+library(scater)
+```
+
+### **1. Data Exploration**
+
+```{r}
+#Load seurat object
+RNA_data <- readRDS("human_cerebral_cortex.rds")
+```
+
+```{r}
+RNA_data
+```
+
+```{r}
+#Access the metadata dataframe
+head(RNA_data@meta.data)
+```
+
+```{r}
+#Check a specific variable in the metadata
+unique(RNA_data$author_cell_type)
+```
+
+```{r}
+unique(RNA_data$age_group)
+```
+
+```{r}
+unique(RNA_data$donor_id)
+```
+
+-   **LaFet1, LaFet2**: Likely late fetal stage donors.
+
+-   **EaFet1, EaFet2**: Likely early fetal stage donors.
+
+-   **Inf1, Inf2**: Infant donors.
+
+-   **Adol1, Adol2**: Adolescent donors.
+
+-   **Child1, Child2**: Child donors.
+
+-   **Adult1, Adult2**: Adult donors.
+
+### **2. Quality Control** 
+
+```{r}
+colnames(RNA_data@meta.data)
+```
+
+```{r}
+# Calculate the percentage of hemoglobin genes in RNA_data
+RNA_data <- PercentageFeatureSet(RNA_data, pattern = "^HB[^(P)]", col.name = "percent.hb")
+```
+
+```{r}
+# Calculating ribosomal proportion
+RNA_data <- PercentageFeatureSet(RNA_data, "^RP[SL]", col.name = "percent.ribo")
+
+```
+
+```{r}
+# Visualize QC metrics as a violin plot
+VlnPlot(RNA_data, features = c("nFeature_RNA", "nCount_RNA", "percent_mt", "percent.hb", "percent.ribo"), ncol = 5)
+
+```
+
+```{r}
+# Removal of low quality cells 
+# Filter cells based on QC metrics
+RNA_data.filtered <- subset(RNA_data, 
+                            subset = nFeature_RNA > 200 & 
+                                     nFeature_RNA < 3500 & 
+                                     percent_mt < 6 & 
+                                     percent.hb < 1)
+```
+
+```{r}
+# Install and load the matrixStats package
+install.packages("matrixStats")
+library(matrixStats)
+
+# Set plot margins for better visualization
+par(mar = c(4, 8, 2, 1))
+
+# Extract the raw count matrix from the filtered dataset
+C <- RNA_data.filtered@assays$RNA@counts
+
+# Normalize counts to percentages (relative abundance)
+C <- Matrix::t(Matrix::t(C) / Matrix::colSums(C)) * 100
+
+# Identify the top 20 most expressed genes
+most_expressed <- order(rowMedians(as.matrix(C)), decreasing = TRUE)[20:1]
+
+# Transpose the selected top 20 genes matrix for plotting
+selected_genes <- t(as.matrix(C[most_expressed, ]))
+
+# Create a boxplot for the top 20 most expressed genes with colors
+boxplot(as.matrix(t(C[most_expressed, ])), 
+        cex = 0.1, 
+        las = 1, 
+        xlab = "% total count per cell", 
+        col = (scales::hue_pal())(20)[20:1], 
+        horizontal = TRUE,
+        main = "Top 20 Most Expressed Genes")
+
+```
+
+```{r}
+head(rownames(RNA_data.filtered@assays$RNA@counts))
+
+```
+
+```{r}
+head(RNA_data.filtered@assays$RNA@meta.features)
+
+```
+
+```{r}
+dim(RNA_data)
+```
+
+```{r}
+dim(RNA_data.filtered)
+```
+
+### **3. Normalization**
+
+```{r}
+RNA_data.filtered <- NormalizeData(RNA_data.filtered, normalization.method = "LogNormalize", scale.factor = 10000)
+
+```
+
+### **4. Identification of Highly Variable Features**
+
+```{r}
+# Identify the top 2000 highly variable features
+RNA_data.filtered <- FindVariableFeatures(RNA_data.filtered, selection.method = "vst", nfeatures = 2000)
+
+```
+
+```{r}
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(RNA_data.filtered), 10)
+
+# Plot variable features
+plot1 <- VariableFeaturePlot(RNA_data.filtered)
+
+# Add labels for the top 10 highly variable genes
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+
+# Display the plot
+plot2
+
+```
+
+\
+**5. Scaling**
+
+```{r}
+# Regress out ribosomal gene content and scale the data
+RNA_data.filtered <- ScaleData(RNA_data.filtered, vars.to.regress = "percent.ribo")
+
+```
+
+### **7. Visualization**
+
+```{r}
+# Perform PCA using the highly variable features
+RNA_data.filtered <- RunPCA(RNA_data.filtered, features = VariableFeatures(object = RNA_data.filtered))
+
+```
+
+```{r}
+ElbowPlot(RNA_data.filtered) 
+```
+
+```{r}
+# Extract the PCA results (standard deviations of the PCs)
+stdev <- RNA_data.filtered[["pca"]]@stdev
+
+# Calculate the variance explained by each principal component
+variance <- stdev^2 / sum(stdev^2)
+
+# Calculate the cumulative variance explained
+cumulative_var <- cumsum(variance)
+
+# Find the number of components responsible for 75% of the variability
+num_pcs <- which(cumulative_var >= 0.75)[1]
+
+# Print the result
+cat("Number of PCs explaining at least 75% variance:", num_pcs, "\n")
+
+```
+
+```{r}
+# Identify neighbors using the first 18 PCs
+RNA_data.filtered <- FindNeighbors(RNA_data.filtered, dims = 1:18)
+
+# Cluster cells at different resolutions
+RNA_data.filtered <- FindClusters(RNA_data.filtered, resolution = c(0.3, 0.5, 0.7))
+
+
+```
+
+```{r}
+# Perform UMAP using the first 18 PCs
+RNA_data.filtered <- RunUMAP(RNA_data.filtered, dims = 1:18)
+
+# Plot UMAP
+p1 <- DimPlot(RNA_data.filtered, reduction = "umap")
+p1  # Display the plot
+
+# Plot clusters for a specific resolution
+DimPlot(RNA_data.filtered, group.by = "RNA_snn_res.0.3", label = TRUE)
+
+```
+
+```{r}
+# Visualize clusters at resolution 0.5 in UMAP space
+DimPlot(RNA_data.filtered, group.by = "RNA_snn_res.0.5", label = TRUE)
+
+```
+
+```{r}
+DimPlot(RNA_data.filtered, group.by = "RNA_snn_res.0.7", label = TRUE)
+```
+
+```{r}
+Idents(RNA_data.filtered) <- "RNA_snn_res.0.3"
+```
+
+**7. Doublets**
+
+```{r}
+# Set seed for reproducibility
+set.seed(10010101)
+
+# Run scDblFinder to detect doublets
+sce.dbl <- scDblFinder(sce, samples = "sample", clusters = colLabels(sce))
+
+```
