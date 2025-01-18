@@ -247,10 +247,39 @@ Idents(RNA_data.filtered) <- "RNA_snn_res.0.3"
 **7. Doublets**
 
 ```{r}
-# Set seed for reproducibility
+library(Seurat)
+library(SingleCellExperiment)
+
+# Convert the filtered Seurat object to a SingleCellExperiment object
+sce <- as.SingleCellExperiment(RNA_data.filtered)
+
+# Check the structure of the resulting SCE object
+sce
+
+
+```
+
+```{r}
+colnames(colData(sce))
+
+```
+
+```{r}
+unique(sce$batch)
+unique(sce$donor_id)
+
+```
+
+```{r}
+library(scDblFinder)
 set.seed(10010101)
 
-# Run scDblFinder to detect doublets
-sce.dbl <- scDblFinder(sce, samples = "sample", clusters = colLabels(sce))
+sce.dbl <- scDblFinder(sce, samples = "sample", clusters = sce$seurat_clusters)
+
+
+```
+
+```{r}
+colnames(colData(sce))
 
 ```
