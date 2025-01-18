@@ -61,7 +61,7 @@ atac_data@meta.data <- atac_data@meta.data[, !(colnames(atac_data@meta.data) %in
 data.filtered <- subset(atac_data, subset = nCount_ATAC > 200  & nCount_ATAC < 100000 & nucleosome_signal<3 &percent_mt < 5)
 
 
-#Cells that are present in less than 10 samples are excluded
+# Cells that are present in less than 10 samples are excluded
 
 # Filter genes expressed in at least 10 cells
 
@@ -69,11 +69,10 @@ data.filtered <- subset(atac_data, subset = nCount_ATAC > 200  & nCount_ATAC < 1
 data.filtered <- data.filtered[rowSums(data.filtered@assays$RNA@counts > 0) >= 10, ]
 
 
-VlnPlot(data.filtered, features = c("nFeature_ATAC", "nCount_ATAC","TSS_percentile","nucleosome_signal", "percent_mt"), ncol = 5)
+VlnPlot(data.filtered, features = c("nFeature_ATAC", "nCount_ATAC","TSS_percentile","nucleosome_signal", "percent_mt", "percent_ribo"), ncol = 5)
 
 dim(data)
 dim(data.filtered)
-
 
 
 #This is how we perform normalization in scATAC data
