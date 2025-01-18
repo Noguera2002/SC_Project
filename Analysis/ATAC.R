@@ -48,12 +48,17 @@ gene_symbols <- mapIds(
 # Identify ribosomal genes
 ribo_genes <- names(gene_symbols[grep("^RP[SL]", gene_symbols)])
 
-
+# Calculate percent ribosomal content
+atac_data <- PercentageFeatureSet(
+  atac_data,
+  features = ribo_genes,
+  col.name = "percent_ribo"
+)
 
 # Dropped the  RNA counts so that it doesn't affect the analysis on the ATAC (variable features etc)
 atac_data@meta.data <- atac_data@meta.data[, !(colnames(atac_data@meta.data) %in% c("nCount_RNA", "nFeature_RNA"))]
 
-data.filtered <- subset(data, subset = nCount_ATAC > 200  & nCount_ATAC < 100000 & nucleosome_signal<3 &percent_mt < 5)
+data.filtered <- subset(atac_data, subset = nCount_ATAC > 200  & nCount_ATAC < 100000 & nucleosome_signal<3 &percent_mt < 5)
 
 
 #Cells that are present in less than 10 samples are excluded
