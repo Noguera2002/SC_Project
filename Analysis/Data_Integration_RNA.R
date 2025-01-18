@@ -23,8 +23,6 @@ scRNA <- readRDS("Data/scRNA_filtered.rds")
 DimPlot(scRNA, reduction = 'umap', group.by = 'age_group') # group by age_group
 DimPlot(scRNA, reduction = 'umap', split.by = 'age_group')
 
-
-
 ### 2. Preprocess the Data for Integration
 
 # Lets split the data based on age_group
@@ -56,9 +54,9 @@ which(cumulative_var >= 0.75)[1]
 
 ### 3. Integrate the Data Using Harmony and CCA
 
-# library(future)
-# plan("multisession", workers = 4)
-# options(future.globals.maxSize = 8000 * 1024^2)
+library(future)
+plan("multisession", workers =4)
+options(future.globals.maxSize = 8000 * 1024^2)
 
 # a Anchor-Based CCA Integration
 scRNA <- IntegrateLayers(
@@ -79,7 +77,7 @@ scRNA <- IntegrateLayers(
 )
 
 # Set the future plan back to "sequential" after running itegration
-# plan("sequential")
+plan("sequential")
 
 #Re-join the split layers
 scRNA[["RNA"]] <- JoinLayers(scRNA[["RNA"]])
@@ -98,26 +96,4 @@ p3 <- DimPlot(scRNA, reduction = "umap_harmony", group.by = "age_group") + ggtit
 
 # Combine the Plots in a Single Row
 wrap_plots(p1, p2, p3, nrow = 1) + plot_layout(guides = "collect")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
