@@ -91,7 +91,11 @@ scRNA@meta.data$singleR.labels <- pred$pruned.labels[match(rownames(scRNA@meta.d
 table(scRNA@meta.data$singleR.labels)
 
 # Plot UMAP with SingleR labels, including "Unknown"
-DimPlot(scRNA, group.by = "singleR.labels")
+singleRplot <- DimPlot(scRNA, group.by = "singleR.labels")
+
+singleRplot_umap <- DimPlot(scRNA, reduction = "umap", group.by = "singleR.labels")
+ggsave("SingleR.png", plot = singleRplot, width = 10, height = 8, dpi = 300)
+ggsave("SingleR_umap.png", plot = singleRplot_umap, width = 10, height = 8, dpi = 300)
 
 # Diagnostics for SingleR annotation
 # 1. View scores
