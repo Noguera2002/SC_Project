@@ -241,7 +241,7 @@ dds
 keep <- rowSums(counts(dds)) >= 10
 dds <- dds[keep, ]
 
-# Check the dimensions of the filtered dataset
+# Check the dimensions of the filtered dataset with
 dds
 
 ```
