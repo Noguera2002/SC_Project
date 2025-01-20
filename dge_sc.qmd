@@ -1,0 +1,267 @@
+---
+title: "dge_sc"
+format: html
+editor: visual
+---
+
+Downstream Analysis 2
+
+```{r}
+data_dge <- readRDS("Data/scRNA_integrated_no_doublets.rds")
+```
+
+```{r}
+suppressPackageStartupMessages({
+library(DCATS)
+library(Seurat)
+library(SeuratData)
+library(SingleCellExperiment)
+library(clusterProfiler)
+library(dplyr)
+library(enrichplot)
+library(fgsea)
+library(ggplot2)
+library(ggrepel)
+library(tibble)
+library(tidyverse)
+})
+```
+
+```{r}
+# View metadata to identify columns for conditions and cell types
+head(data_dge@meta.data)
+
+```
+
+```{r}
+unique(data_dge@meta.data$age_group)
+
+```
+
+```{r}
+table(data_dge@meta.data$age_group)
+
+```
+
+```{r}
+# Create a unique identifier for each cell
+data_dge$id <- paste0(data_dge$age_group, "_", data_dge$donor_id)
+
+```
+
+```{r}
+# Load the required libraries
+library(Seurat)
+library(SingleCellExperiment)
+
+# Convert Seurat object to SingleCellExperiment object
+sce <- as.SingleCellExperiment(data_dge)
+
+```
+
+Estimate the similarity matrix by retrieving the created snn graph and annotation labels(**cell_type_manual**) from your seurat object.
+
+```{r}
+# Ensure that Seurat and DCATS are loaded
+library(Seurat)
+library(DCATS)
+
+# Estimate the similarity matrix using the SNN graph and cell type annotations
+knn_mat <- knn_simMat(
+  data_dge@graphs$RNA_snn,        # The SNN graph from your Seurat object
+  data_dge@meta.data$author_cell_type  # Cell type annotations
+)
+
+```
+
+```{r}
+# Create a contingency table of sample IDs and cell types
+count_mat <- table(data_dge$id, data_dge$author_cell_type)
+
+# View the resulting count matrix
+count_mat
+
+```
+
+```{r}
+# Create the design matrix for age groups
+sim_design <- data.frame(condition = data_dge$age_group)
+
+# Check the design matrix
+head(sim_design)
+
+```
+
+```{r}
+dim(count_mat)
+
+```
+
+```{r}
+# Ensure sim_design matches the sample IDs in count_mat
+sim_design <- data.frame(
+  condition = data_dge@meta.data$age_group[match(rownames(count_mat), data_dge$id)]
+)
+
+# Set rownames of sim_design to match count_mat rownames
+rownames(sim_design) <- rownames(count_mat)
+
+# Check sim_design
+head(sim_design)
+dim(sim_design)  # Should now be [12, 1]
+
+```
+
+```{r}
+# Map age groups to numeric values
+numeric_mapping <- c(
+  "early fetal" = 1,
+  "late fetal" = 2,
+  "infancy" = 3,
+  "childhood" = 4,
+  "adolescence" = 5,
+  "adulthood" = 6
+)
+
+# Apply the mapping to sim_design
+sim_design$condition <- as.numeric(factor(sim_design$condition, levels = names(numeric_mapping)))
+
+# Run dcats_GLM with numeric condition
+results <- dcats_GLM(
+  count_mat,
+  sim_design,
+  knn_mat
+)
+
+# View the results
+print(results)
+
+```
+
+### DESeq2
+
+```{r}
+library(DESeq2)
+```
+
+```{r}
+# Create a unique sample identifier
+data_dge$id <- paste0(data_dge$age_group, "_", data_dge$donor_id)
+
+# Aggregate counts to sample level
+counts <- AggregateExpression(
+  data_dge, 
+  group.by = c("author_cell_type", "id"),  # Group by cell type and unique ID
+  assays = "RNA",                         # Use RNA assay for counts
+  return.seurat = FALSE                   # Return as a list
+)
+counts <- counts$RNA  # Extract the RNA assay counts
+
+```
+
+```{r}
+# Transpose the matrix
+counts.t <- t(counts)
+
+# Convert to a data frame
+counts.t <- as.data.frame(counts.t)
+
+```
+
+```{r}
+# Extract the condition (age_group) from row names
+splitRows <- gsub('_.*', '', rownames(counts.t))
+
+# Split the data frame by condition
+cts.split <- split.data.frame(counts.t, f = factor(splitRows))
+
+```
+
+```{r}
+# Modify and transpose each subset
+cts.split.modified <- lapply(cts.split, function(x) {
+    rownames(x) <- gsub('.*_(.*)', '\\1', rownames(x))  # Retain donor_id as row names
+    t(x)  # Transpose back
+})
+
+```
+
+```{r}
+unique(data_dge$author_cell_type)
+
+```
+
+```{r}
+# List all cell types in cts.split.modified
+names(cts.split.modified)
+
+```
+
+```{r}
+counts_en_fetal_early <- cts.split.modified[["EN-fetal-early"]]
+dim(counts_en_fetal_early)
+head(counts_en_fetal_early)
+
+```
+
+```{r}
+library(dplyr)
+
+# Generate sample-level metadata
+colData <- data.frame(samples = colnames(counts_en_fetal_early))
+
+# Add a condition column based on the sample names
+colData <- colData %>%
+  mutate(condition = ifelse(grepl("early fetal", samples), "Early Fetal", "Late Fetal")) %>%
+  column_to_rownames(var = "samples")
+
+# Check the metadata
+colData
+
+```
+
+```{r}
+# Load DESeq2 library
+library(DESeq2)
+
+# Create the DESeq2 object
+dds <- DESeqDataSetFromMatrix(
+  countData = counts_en_fetal_early,  # Use your pseudobulk count matrix
+  colData = colData,                 # Use the sample-level metadata
+  design = ~ condition               # Specify the experimental design
+)
+
+# Check the structure of the DESeq2 object
+dds
+
+```
+
+```{r}
+# Filter genes with fewer than 10 reads across all samples
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep, ]
+
+# Check the dimensions of the filtered dataset
+dds
+
+```
+
+```{r}
+# Run DESeq2 analysis
+dds <- DESeq(dds)
+
+# Check the DESeq2 object after running the analysis
+dds
+
+
+
+```
+
+```{r}
+# Check the coefficients for the comparison
+resultsNames(dds)
+```
+
+```{r}
+
+```
