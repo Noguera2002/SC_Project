@@ -8,56 +8,58 @@ suppressPackageStartupMessages({
   library(SingleCellExperiment)
   library(tradeSeq)
   library(dplyr)
+  library(EnsDb.Hsapiens.v86)
+  
 })
 
-annotated_data <- readRDS("../Analysis/annotation.rds")
+annotated_data <- readRDS("./Analysis/annotation.rds")
 
 
 
 #Question: How do progenitor populations like RG (Radial Glia) or IPC (Intermediate Progenitor Cells)
 #transition into mature neuronal and glial cell types (e.g., EN, IN-MGE, IN-CGE, Astrocytes, Oligodendrocytes) across age groups?
 
-RG <- subset(annotated_data, author_cell_type == "RG")
+HSC_CD34 <- subset(annotated_data, subset = singleR.labels == "Embryonic_stem_cells")
 
 #Remove layers
-RG@assays$RNA@layers$scale.data.childhood <- NULL
-RG@assays$RNA@layers$scale.data.adulthood <- NULL
-RG@assays$RNA@layers$scale.data.infancy <- NULL
-RG@assays$RNA@layers$scale.data.adolescence <- NULL
-RG@assays$RNA@layers$scale.data$early_fetal <- NULL
-RG@assays$RNA@layers$scale.data$late_adolescence <- NULL
-RG@assays$RNA@layers$scale.data<- NULL
+HSC_CD34@assays$RNA@layers$scale.data.childhood <- NULL
+HSC_CD34@assays$RNA@layers$scale.data.adulthood <- NULL
+HSC_CD34@assays$RNA@layers$scale.data.infancy <- NULL
+HSC_CD34@assays$RNA@layers$scale.data.adolescence <- NULL
+HSC_CD34@assays$RNA@layers$scale.data$early_fetal <- NULL
+HSC_CD34@assays$RNA@layers$scale.data$late_fetal <- NULL
+HSC_CD34@assays$RNA@layers$scale.data <- NULL
+
 
 #remove reductions
-RG@reductions <- list()
+HSC_CD34@reductions <- list()
 
-RG <- FindVariableFeatures(RG)
-RG <- ScaleData(RG)
-RG <- RunPCA(RG)
-dim(RG@assays$RNA@scale.data)
+HSC_CD34 <- FindVariableFeatures(HSC_CD34)
+HSC_CD34 <- ScaleData(HSC_CD34)
+HSC_CD34 <- RunPCA(HSC_CD34, npcs = 20)
 
-ElbowPlot(RG)
+ElbowPlot(HSC_CD34)
 
 # We decided to use 12 PCs for following analysis
-RG <- FindNeighbors(RG, dims = 1:15)
+HSC_CD34 <- FindNeighbors(HSC_CD34, dims = 1:20)
 
 
-RG <- FindClusters(RG, resolution = c(0.3, 0.5, 0.7))
-RG <- RunUMAP(RG, dims = 1:15)
+HSC_CD34 <- FindClusters(HSC_CD34, resolution = c(0.3, 0.5, 0.7))
+HSC_CD34 <- RunUMAP(HSC_CD34, dims = 1:20)
 
 
-DimPlot(RG, reduction = "umap", group.by = "RNA_snn_res.0.5", label = TRUE)
+DimPlot(HSC_CD34, reduction = "umap", group.by = "RNA_snn_res.0.5", label = TRUE)
 
-Idents(RG) <- "RNA_snn_res.0.5"
+Idents(HSC_CD34) <- "RNA_snn_res.0.5"
 
 
 pal <- c(RColorBrewer::brewer.pal(9, "Set1"), RColorBrewer::brewer.pal(8, "Set2"))
 
-dimred <- RG@reductions$umap@cell.embeddings
-clustering <- RG$RNA_snn_res.0.5
+dimred <- HSC_CD34@reductions$umap@cell.embeddings
+clustering <- HSC_CD34$RNA_snn_res.0.5
 
-var_features<- VariableFeatures(RG)
-counts<- as.matrix(RG@assays$RNA$counts[var_features, ])
+var_features<- VariableFeatures(HSC_CD34)
+counts<- as.matrix(HSC_CD34@assays$RNA$counts[var_features, ])
 
 
 set.seed(123)
