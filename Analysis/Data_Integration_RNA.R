@@ -16,7 +16,7 @@ library(tibble)
 # Identify cell types based on known gene marker expression
 # Identify cell types using a previously annotated dataset as reference
 
-scRNA <- readRDS("Data/scRNA_filtered.rds") 
+scRNA <- readRDS("Data/scRNA_filtered_no_doublets.rds") 
 
 # 1 Lets visualize the data
 
@@ -46,10 +46,9 @@ variance <- stdev^2 / sum(stdev^2)
 cumulative_var <- cumsum(variance)
 
 # Find the number of components responsible for 80% of the variability
-which(cumulative_var >= 0.75)[1]
+which(cumulative_var >= 0.80)[1]
 
 # Number of PCs to use for clustering is 16
-
 
 
 ### 3. Integrate the Data Using Harmony and CCA
@@ -67,6 +66,9 @@ scRNA <- IntegrateLayers(
   verbose = FALSE
 )
 
+#Save the data
+saveRDS(scRNA, "Data/scRNA_integrated_no_doublets.rds")
+
 # b Harmony Integration
 scRNA <- IntegrateLayers(
   object = scRNA,
@@ -83,7 +85,7 @@ plan("sequential")
 scRNA[["RNA"]] <- JoinLayers(scRNA[["RNA"]])
 
 #Save the data
-saveRDS(scRNA, "Data/scRNA_integrated.rds")
+saveRDS(scRNA, "Data/scRNA_integrated_no_doublets.rds")
 
 # Run UMAP on the CCA and Harmony Integrated Reductions
 scRNA <- RunUMAP(scRNA, dims = 1:16, reduction = "CCA_Integration", reduction.name = "umap_cca")
@@ -91,9 +93,18 @@ scRNA <- RunUMAP(scRNA, dims = 1:16, reduction = "Harmony_Integration", reductio
 
 # Create UMAP Plots
 p1 <- DimPlot(scRNA, reduction = 'umap', group.by = 'age_group') + ggtitle("UMAP Raw Data")
+ggsave("Results/umap_raw_data.png", plot = p1, width = 8, height = 6)
 p2 <- DimPlot(scRNA, reduction = "umap_cca", group.by = "age_group") + ggtitle("UMAP CCA")
+ggsave("Results/umap_cca.png", plot = p2, width = 8, height = 6)
 p3 <- DimPlot(scRNA, reduction = "umap_harmony", group.by = "age_group") + ggtitle("UMAP Harmony")
+ggsave("Results/umap_harmony.png", plot = p3, width = 8, height = 6)
 
 # Combine the Plots in a Single Row
-wrap_plots(p1, p2, p3, nrow = 1) + plot_layout(guides = "collect")
+combined_umap_plot <- wrap_plots(p1, p2, p3, nrow = 1) + plot_layout(guides = "collect")
+ggsave("Results/combined_umap_plots.png", plot = combined_umap_plot, width = 24, height = 8)
+combined_umap_plot
+
+#Save the data
+saveRDS(scRNA, "Data/scRNA_integrated_no_doublets.rds")
+
 
