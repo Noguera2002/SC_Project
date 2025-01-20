@@ -65,7 +65,7 @@ vln_plot_2 <- VlnPlot(HCC_data.filtered, features = c("nFeature_RNA", "nCount_RN
 ggsave("Results/QC_violin_RNA_2.png", plot = vln_plot_2, width = 10, height = 7)
 vln_plot_2
 
-# Add an extra filtration step to keep genes that are present in at least 3 cells
+# Add an extra filtration step to keep genes that are present in at least 10 cells
 HCC_data.filtered <- HCC_data.filtered[rowSums(HCC_data.filtered@assays$RNA@counts > 0) >= 10, ]
 
 # Removal of low-quality genes 
@@ -194,23 +194,84 @@ HCC_data.filtered <- FindClusters(HCC_data.filtered, resolution = c(0.3, 0.5, 0.
 HCC_data.filtered <- RunUMAP(HCC_data.filtered, dims = 1:16)
 p1<- DimPlot(HCC_data.filtered, reduction = "umap")
 
-plot_0.3 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.3", label = TRUE)
+plot_0.3 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.3", label = TRUE, reduction = "umap")
 ggsave("Results/dimplot_res_0.3.png", plot = plot_0.3, width = 8, height = 6)
 plot_0.3
 
-plot_0.5 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.5", label = TRUE)
+plot_0.5 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.5", label = TRUE, reduction = "umap")
 ggsave("Results/dimplot_res_0.5.png", plot = plot_0.5, width = 8, height = 6)
 plot_0.5
 
-plot_0.7 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.7", label = TRUE)
+plot_0.7 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.7", label = TRUE, reduction = "umap")
 ggsave("Results/dimplot_res_0.7.png", plot = plot_0.7, width = 8, height = 6)
 plot_0.7
 
 
-### 7. Doublet detection
-#Convert your seurat object to a sce object
-# 1. Convert to SCE object
+# ### 7. Doublet detection
+# #Convert your seurat object to a sce object
+# # 1. Convert to SCE object
+# sce <- as.SingleCellExperiment(HCC_data.filtered)
+# 
+# # 2. Create a "sample" variable combining age group and donor ID to account for batch effects
+# sce$sample <- paste0(HCC_data.filtered$age_group, "_", HCC_data.filtered$donor_id)
+# 
+# # 3. Run scDblFinder for doublet detection
+# set.seed(10010101)  # For reproducibility
+# sce <- scDblFinder(sce, samples = "sample")  # Use "sample" to handle batches
+# 
+# # 4. Inspect the doublet classification results
+# doublet_table <- table(sce$scDblFinder.class)
+# doublet_percentage <- sum(sce$scDblFinder.class == "doublet") / length(sce$scDblFinder.class) * 100
+# 
+# # Print doublet results
+# print(doublet_table)
+# cat(sprintf("Doublet percentage: %.2f%%\n", doublet_percentage))
+# 
+# # 5. Add doublet classifications back to Seurat object
+# HCC_data.filtered$scDblFinder.class <- sce$scDblFinder.class
+# HCC_data.filtered$scDblFinder.score <- sce$scDblFinder.score
+# 
+# # 6. Visualize doublet scores on UMAP
+# # Add UMAP coordinates to SCE for visualization (if not already present)
+# if (is.null(reducedDim(sce, "UMAP"))) {
+#   reducedDim(sce, "UMAP") <- HCC_data.filtered@reductions$umap@cell.embeddings
+# }
+# 
+# # Plot UMAP with doublet scores
+# scDblFinder_score_plot <- plotUMAP(sce, colour_by = "scDblFinder.score")
+# ggsave("Results/scDblFinder_score.png", plot = scDblFinder_score_plot, width = 8, height = 6)
+# scDblFinder_score_plot
+# 
+# # 7. Visualize clusters and doublets in Seurat
+# # Plot Seurat clusters and highlight doublets
+# DimPlot(HCC_data.filtered, group.by = "seurat_clusters", label = TRUE)
+# scDblFinder_score_plot2 <- FeaturePlot(HCC_data.filtered, features = "scDblFinder.score")
+# ggsave("Results/scDblFinder_score2.png", plot = scDblFinder_score_plot2, width = 8, height = 6)
+# scDblFinder_score_plot2
+# 
+# # 8. Remove doublets
+# # Remove doublets from the Seurat object
+# HCC_data.filtered_no_doublets <- subset(HCC_data.filtered, subset = scDblFinder.class != "doublet")
+# # Check the number of cells before and after removal
+# cat(sprintf("Cells before removal: %d\n", ncol(HCC_data.filtered)))
+# cat(sprintf("Cells after removal: %d\n", ncol(HCC_data.filtered_no_doublets)))
+# # Visualize after doublet removal
+# scDblFinder_score_plot_no_doublets <- FeaturePlot(HCC_data.filtered_no_doublets, features = "scDblFinder.score")
+# ggsave("Results/scDblFinder_score_no_doublets.png", plot = scDblFinder_score_plot_no_doublets, width = 8, height = 6)
+# scDblFinder_score_plot_no_doublets
+# 
+# dim(HCC_data.filtered_no_doublets)
+# 
+# # Save the filtered Seurat object
+# saveRDS(HCC_data.filtered_no_doublets, "Data/scRNA_filtered_no_doublets.rds")
 
+
+
+
+
+
+### 7. Doublet detection
+# 1. Convert your Seurat object to a SingleCellExperiment (SCE) object
 sce <- as.SingleCellExperiment(HCC_data.filtered)
 
 # 2. Create a "sample" variable combining age group and donor ID to account for batch effects
@@ -232,10 +293,14 @@ cat(sprintf("Doublet percentage: %.2f%%\n", doublet_percentage))
 HCC_data.filtered$scDblFinder.class <- sce$scDblFinder.class
 HCC_data.filtered$scDblFinder.score <- sce$scDblFinder.score
 
-# 6. Visualize doublet scores on UMAP
-# Add UMAP coordinates to SCE for visualization (if not already present)
+# 6. **Add UMAP coordinates to SCE for visualization (if not already present)**
+# Explicitly assign UMAP coordinates from Seurat to SCE
 if (is.null(reducedDim(sce, "UMAP"))) {
   reducedDim(sce, "UMAP") <- HCC_data.filtered@reductions$umap@cell.embeddings
+}
+# Remove JOINT_WNN_UMAP if it's not needed
+if ("JOINT_WNN_UMAP" %in% names(reducedDims(sce))) {
+  reducedDim(sce, "JOINT_WNN_UMAP") <- NULL
 }
 
 # Plot UMAP with doublet scores
@@ -245,8 +310,7 @@ scDblFinder_score_plot
 
 # 7. Visualize clusters and doublets in Seurat
 # Plot Seurat clusters and highlight doublets
-DimPlot(HCC_data.filtered, group.by = "seurat_clusters", label = TRUE)
-scDblFinder_score_plot2 <- FeaturePlot(HCC_data.filtered, features = "scDblFinder.score")
+scDblFinder_score_plot2 <- FeaturePlot(HCC_data.filtered, features = "scDblFinder.score", reduction = "umap")
 ggsave("Results/scDblFinder_score2.png", plot = scDblFinder_score_plot2, width = 8, height = 6)
 scDblFinder_score_plot2
 
@@ -257,12 +321,10 @@ HCC_data.filtered_no_doublets <- subset(HCC_data.filtered, subset = scDblFinder.
 cat(sprintf("Cells before removal: %d\n", ncol(HCC_data.filtered)))
 cat(sprintf("Cells after removal: %d\n", ncol(HCC_data.filtered_no_doublets)))
 # Visualize after doublet removal
-scDblFinder_score_plot_no_doublets <- FeaturePlot(HCC_data.filtered_no_doublets, features = "scDblFinder.score")
+scDblFinder_score_plot_no_doublets <- FeaturePlot(HCC_data.filtered_no_doublets, features = "scDblFinder.score", reduction = "umap")
 ggsave("Results/scDblFinder_score_no_doublets.png", plot = scDblFinder_score_plot_no_doublets, width = 8, height = 6)
 scDblFinder_score_plot_no_doublets
 
-# very low percentage of doublets, so we can proceed with the analysis. No need to remove them.
-HCC_data.filtered_no_doublets <- readRDS("Data/scRNA_filtered_no_doublets.rds")
 dim(HCC_data.filtered_no_doublets)
 
 # Save the filtered Seurat object
