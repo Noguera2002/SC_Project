@@ -25,7 +25,7 @@ library(EnsDb.Hsapiens.v75)
 library(clustree)
 
 # Step 1: Read and visualize the data
-scRNA <- readRDS("../Data/scRNA_integrated.rds")
+scRNA <- readRDS("./Data/scRNA_integrated_no_doublets.rds")
 
 # Visualize clustering resolutions using clustree
 clustree_plot <- clustree(scRNA, prefix = "RNA_snn_res.")
@@ -33,7 +33,7 @@ clustree_plot <- clustree(scRNA, prefix = "RNA_snn_res.")
 # Save the plot to a file
 ggsave("clustree_plot.png", plot = clustree_plot, width = 10, height = 8, dpi = 300)
 
-Idents(scRNA) <- "RNA_snn_res.0.3"
+Idents(scRNA) <- "RNA_snn_res.0.2"
 
 # Step 2: Load the reference dataset
 ref <- celldex::HumanPrimaryCellAtlasData()
@@ -94,7 +94,6 @@ table(scRNA@meta.data$singleR.labels)
 singleRplot <- DimPlot(scRNA, group.by = "singleR.labels")
 
 singleRplot_umap <- DimPlot(scRNA, reduction = "umap", group.by = "singleR.labels")
-ggsave("SingleR.png", plot = singleRplot, width = 10, height = 8, dpi = 300)
 ggsave("SingleR_umap.png", plot = singleRplot_umap, width = 10, height = 8, dpi = 300)
 
 # Diagnostics for SingleR annotation
@@ -106,9 +105,134 @@ plotScoreHeatmap(pred)
 
 # 3. Plot delta distribution
 delta_scores <- plotDeltaDistribution(pred)
+delta_scores
 ggsave("delta_scores.png", plot = delta_scores, width = 10, height = 8, dpi = 300)
 
 saveRDS(scRNA, "annotation.rds")
+
+
+
+
+
+annotation <- readRDS("annotation.rds")
+
+cluster7_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 7,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster6_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 6,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+
+cluster5_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 5,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster4_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 4,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster3_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 3,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster2_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 2,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster1_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 1,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+
+
+cluster0_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 0,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster8_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 8,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+
+
+cluster9_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 9,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster10_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 10,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster11_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 11,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster12_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 12,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
+
+cluster13_conserved_markers <- FindConservedMarkers(annotation,
+                                                   ident.1 = 13,
+                                                   grouping.var = "age_group",
+                                                   only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                   logfc.threshold = 0.25)
+
+cluster14_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 14,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
+
+
+cluster15_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 15,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
+cluster16_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 16,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
+
+cluster17_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 17,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
+cluster18_conserved_markers <- FindConservedMarkers(annotation,
+                                                    ident.1 = 18,
+                                                    grouping.var = "age_group",
+                                                    only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
+                                                    logfc.threshold = 0.25)
 
 
 ----------------------------------
@@ -122,7 +246,7 @@ set.seed(123)
 library(Seurat)
 library(harmony)
 
-integrate.data <- readRDS("../Data/scRNA_integrated.rds")
+integrate.data <- readRDS("./Data/scRNA_integrated_no_doublets.rds")
 
 #Identify the conserved markers
 DimPlot(integrate.data, reduction = 'umap', group.by = "seurat_clusters", label = TRUE)
@@ -132,77 +256,47 @@ DimPlot(integrate.data, reduction = 'umap', group.by = "age_group")
 library(Seurat)
 
 # Get the list of all clusters
-Idents(integrate.data) <- "seurat_clusters"
-clusters <- unique(Idents(integrate.data))
-
-# Create an empty list to store the conserved markers for each cluster
-conserved_markers_list <- list()
-
-# Loop through each cluster and find conserved markers
-for (cluster in clusters) {
-  conserved_markers <- FindConservedMarkers(
-    integrate.data,
-    ident.1 = cluster,
-    grouping.var = "age_group",  # Replace with the variable of interest
-    only.pos = TRUE,
-    min.pct = 0.25,
-    min.diff.pct = 0.25,
-    logfc.threshold = 0.25
-  )
-  
-  # Store the results in the list
-  conserved_markers_list[[paste0("Cluster_", cluster)]] <- conserved_markers
-}
-
-# To view the results for a specific cluster, e.g., Cluster 1:
-print(conserved_markers_list$Cluster_1)
-
-
 
 # Set the active identity class to the integrated clustering results
-Idents(integrate.data) <- integrate.data$RNA_snn_res.0.3
-celltype <- rep(NA, length = ncol(integrate.data))
+# Set the active identity class to the integrated clustering results
+Idents(integrate.data) <- integrate.data$RNA_snn_res.0.2
 
-# Map clusters to cell types
-celltype[which(Idents(integrate.data) %in% c(11))] <- 'RG'
-celltype[which(Idents(integrate.data) %in% c('5_3'))] <- 'IPC'
-celltype[which(Idents(integrate.data) %in% c(8))] <- 'IN-MGE'
-celltype[which(Idents(integrate.data) %in% c(10))] <- 'IN-CGE'
-celltype[which(Idents(integrate.data) %in% c(3))] <- 'IN-fetal'
-celltype[which(Idents(integrate.data) %in% c(0,14))] <- 'EN-fetal-late'
-celltype[which(Idents(integrate.data) %in% c(6,12))] <- 'EN'
-celltype[which(Idents(integrate.data) %in% c('5_0','5_1','5_2','5_4'))] <- 'EN-fetal-early'
+# Create a mapping of cluster IDs to cell type names
+integrate.data <- RenameIdents(object = integrate.data,
+  "0" = "Neurons",
+  "1" = "Glioblasts",
+  "2" = "Erythroid_progenitor_cells",
+  "3" = "Erythroid_progenitor_cells",
+  "4" = "Ciliated_cells",
+  "5" = "CD4+, alpha-beta T cell",
+  "6" = "Stem_cells",
+  "7" = "Neuronal_stem_Cells",
+  "8" = "ZBTB32+ B cell",
+  "9" = "Astrocytes",
+  "10" = "Myeloblasts",
+  "11" = "Glioblasts",
+  "12" = "Microglia",
+  "13" = "Endothelial cells",
+  "14" = "NA",
+  "15" = "Fibroblasts",
+  "16" = "Multi-ciliated epithelial cell",
+  "17" = "CD8+ T cell",
+  "18" = "CD8+ T cell"
+)
 
-celltype[which(Idents(integrate.data) %in% c(4,9,15))] <- 'Astrocytes'
-celltype[which(Idents(integrate.data) %in% c(1,21,22))] <- 'Oligodendrocytes'
-celltype[which(Idents(integrate.data) %in% c(2,19))] <- 'OPC'
-celltype[which(Idents(integrate.data) %in% c(7,13,17,23))] <- 'Microglia'
-celltype[which(Idents(integrate.data) %in% c(16))] <- 'Endothelial'
-celltype[which(Idents(integrate.data) %in% c(18))] <- 'Pericytes'
-celltype[which(Idents(integrate.data) %in% c(20))] <- 'VSMC'
+# Assign cell types based on cluster IDs
+integrate.data$cell_type_manual <- Idents(integrate.data)
+
+# visualize data
+
+clusters <- DimPlot(integrate.data, reduction = 'umap', label = TRUE)
+celltype <- DimPlot(integrate.data, reduction = 'umap', group.by = 'cell_type_manual', label = TRUE)
+ggsave(filename = 'cell_annotation.png', plot = celltype)
 
 
 
-# Convert cell type annotations to a factor
-celltype <- factor(celltype, 
-                   levels = c('RG', 'IPC', 'EN-fetal-early', 'EN-fetal-late', 'EN', 
-                              'IN-fetal', 'IN-MGE', 'IN-CGE',
-                              'OPC', 'Astrocytes', 'Oligodendrocytes', 'Microglia', 
-                              'Endothelial', 'Pericytes', 'VSMC'), 
-                   ordered = TRUE)
 
-
-integrate.data$celltype.manual <- celltype
-
-
-# Check for unmapped clusters
-if (any(is.na(celltype))) {
-  warning("Some clusters are not assigned a cell type.")
-}
-
-# Visualize with DimPlot
-DimPlot(integrate.data, group.by = "celltype.manual", reduction = "umap", label = TRUE) 
 
 # Optionally save the results to a file
-saveRDS(conserved_markers_list, file = "conserved_markers_all_clusters.rds")
+saveRDS(integrate.data, file ="annotated_cells.rds")
 
