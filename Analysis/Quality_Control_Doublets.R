@@ -16,14 +16,15 @@ library(SingleCellExperiment)
 library(scDblFinder)
 library(grid)
 library(biomaRt)
+library(clustree)
+
+set.seed(123)
 
 ### 1. Load the RNA Seurat object 
 HCC_data <- readRDS("Data/scRNA.rds") 
 head(HCC_data@meta.data) # Investigate metadata
 
-
 ### 2. Quality Control
-
 # Mitochondrial genes. They indicate the presence of dead cells.
 # Ribosomal genes. They are highly expressed in all cells. Bad for normalization.
 # Thankfully the Seurat metadata comes with the percentage of mitochondrial genes.
@@ -188,11 +189,14 @@ which(cumulative_var >= 0.80)[1]
 
 #Cluster cells
 HCC_data.filtered <- FindNeighbors(HCC_data.filtered, dims = 1:16)
-HCC_data.filtered <- FindClusters(HCC_data.filtered, resolution = c(0.3, 0.5, 0.7))
+HCC_data.filtered <- FindClusters(HCC_data.filtered, resolution = c(0.2, 0.3, 0.5, 0.7))
 
 #Non linear dimentional reduction
 HCC_data.filtered <- RunUMAP(HCC_data.filtered, dims = 1:16)
-p1<- DimPlot(HCC_data.filtered, reduction = "umap")
+
+plot_0.2 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.2", label = TRUE, reduction = "umap")
+ggsave("Results/dimplot_res_0.2.png", plot = plot_0.2, width = 8, height = 6)
+plot_0.2
 
 plot_0.3 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.3", label = TRUE, reduction = "umap")
 ggsave("Results/dimplot_res_0.3.png", plot = plot_0.3, width = 8, height = 6)
@@ -205,6 +209,14 @@ plot_0.5
 plot_0.7 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.7", label = TRUE, reduction = "umap")
 ggsave("Results/dimplot_res_0.7.png", plot = plot_0.7, width = 8, height = 6)
 plot_0.7
+
+# Set the Idents to resolution 0.2 since we decided to proceed with that (looks like artificial and too small clusters are created when using more than res 0.3)
+Idents(HCC_data.filtered) <- "RNA_snn_res.0.2"
+
+# Visualize clustering resolutions using clustree
+clustree_plot <- clustree(HCC_data.filtered, prefix = "RNA_snn_res.")
+ggsave("Results/clustree_plot.png", plot = clustree_plot, width = 10, height = 8)
+clustree_plot
 
 
 # ### 7. Doublet detection
@@ -267,9 +279,6 @@ plot_0.7
 
 
 
-
-
-
 ### 7. Doublet detection
 # 1. Convert your Seurat object to a SingleCellExperiment (SCE) object
 sce <- as.SingleCellExperiment(HCC_data.filtered)
@@ -278,7 +287,6 @@ sce <- as.SingleCellExperiment(HCC_data.filtered)
 sce$sample <- paste0(HCC_data.filtered$age_group, "_", HCC_data.filtered$donor_id)
 
 # 3. Run scDblFinder for doublet detection
-set.seed(10010101)  # For reproducibility
 sce <- scDblFinder(sce, samples = "sample")  # Use "sample" to handle batches
 
 # 4. Inspect the doublet classification results
@@ -326,6 +334,21 @@ ggsave("Results/scDblFinder_score_no_doublets.png", plot = scDblFinder_score_plo
 scDblFinder_score_plot_no_doublets
 
 dim(HCC_data.filtered_no_doublets)
+
+# Save the filtered Seurat object
+saveRDS(HCC_data.filtered_no_doublets, "Data/scRNA_filtered_no_doublets.rds")
+
+
+
+#Non linear dimentional reduction
+HCC_data.filtered_no_doublets <- FindNeighbors(HCC_data.filtered_no_doublets, dims = 1:16)
+HCC_data.filtered_no_doublets <- FindClusters(HCC_data.filtered_no_doublets, resolution = 0.2)
+HCC_data.filtered_no_doublets <- RunUMAP(HCC_data.filtered_no_doublets, dims = 1:16)
+
+
+plot_0.2_doublets <- DimPlot(HCC_data.filtered_no_doublets, group.by = "RNA_snn_res.0.2", label = TRUE, reduction = "umap")
+ggsave("Results/dimplot_res_0.2_after_doublets.png", plot = plot_0.2_doublets, width = 8, height = 6)
+plot_0.2_doublets
 
 # Save the filtered Seurat object
 saveRDS(HCC_data.filtered_no_doublets, "Data/scRNA_filtered_no_doublets.rds")

@@ -11,6 +11,8 @@ library(multtest)
 library(metap)
 library(tibble)
 
+set.seed(123)
+
 # Perform integration of cells across conditions to enable meaningful cross-sample comparisons
 # Perform clustering and marker identification workflow with integrated data
 # Identify cell types based on known gene marker expression
@@ -18,10 +20,16 @@ library(tibble)
 
 scRNA <- readRDS("Data/scRNA_filtered_no_doublets.rds") 
 
-# 1 Lets visualize the data
+# 0 Set the Idents to resolution 0.2
+Idents(scRNA) <- "RNA_snn_res.0.2"
 
-DimPlot(scRNA, reduction = 'umap', group.by = 'age_group') # group by age_group
-DimPlot(scRNA, reduction = 'umap', split.by = 'age_group')
+# 1 Lets visualize the data
+umap_age_group <- DimPlot(scRNA, reduction = 'umap', group.by = 'age_group') # group by age_group
+ggsave("Results/dimplot_age_group.png", plot = umap_age_group, width = 8, height = 6)
+umap_age_group
+umap_split_age_group <- DimPlot(scRNA, reduction = 'umap', split.by = 'age_group')
+ggsave("Results/dimplot_split_age_group.png", plot = umap_split_age_group, width = 8, height = 6)
+umap_split_age_group
 
 ### 2. Preprocess the Data for Integration
 
@@ -106,5 +114,3 @@ combined_umap_plot
 
 #Save the data
 saveRDS(scRNA, "Data/scRNA_integrated_no_doublets.rds")
-
-
