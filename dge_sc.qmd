@@ -113,7 +113,7 @@ dim(sim_design)  # Should now be [12, 1]
 ```
 
 ```{r}
-# Map age groups to numeric values
+# Map age groups to numeric values now
 numeric_mapping <- c(
   "early fetal" = 1,
   "late fetal" = 2,
