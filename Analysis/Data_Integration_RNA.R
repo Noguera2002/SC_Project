@@ -112,5 +112,19 @@ combined_umap_plot <- wrap_plots(p1, p2, p3, nrow = 1) + plot_layout(guides = "c
 ggsave("Results/combined_umap_plots.png", plot = combined_umap_plot, width = 24, height = 8)
 combined_umap_plot
 
+# Find neighbors and clusters for the new CCA and Harmony reductions
+scRNA.harmony <- FindNeighbors(scRNA, dims = 1:16, reduction = "Harmony_Integration")
+scRNA.harmony <- FindClusters(scRNA, resolution = 0.2)
+
+scRNA.cca <- FindNeighbors(scRNA, dims = 1:16, reduction = "CCA_Integration")
+scRNA.cca <- FindClusters(scRNA, resolution = 0.2)
+
+# Visualize the new clustering with the harmony and CCA UMAP split by age group. 
+Idents(scRNA.harmony) <- "RNA_snn_res.0.2"
+Idents(scRNA.cca) <- "RNA_snn_res.0.2"
+
+DimPlot(scRNA.harmony, reduction = "umap_harmony", split.by = "age_group")
+DimPlot(scRNA.cca, reduction = "umap_cca", split.by = "age_group")
+
 #Save the data
 saveRDS(scRNA, "Data/scRNA_integrated_no_doublets.rds")
