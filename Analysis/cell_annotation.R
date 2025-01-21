@@ -25,8 +25,10 @@ library(EnsDb.Hsapiens.v75)
 library(clustree)
 
 # Step 1: Read and visualize the data
-scRNA <- readRDS("./Data/scRNA_integrated_no_doublets.rds")
+scRNA <- readRDS("./annotation_2.rds")
 
+
+DimPlot(scRNA, reduction = "umap_harmony", group.by = "RNA_snn_res.0.2", label = TRUE)
 # Visualize clustering resolutions using clustree
 clustree_plot <- clustree(scRNA, prefix = "RNA_snn_res.")
 
@@ -114,7 +116,7 @@ saveRDS(scRNA, "annotation.rds")
 
 
 
-annotation <- readRDS("annotation.rds")
+annotation <- readRDS("Analysis/annotation_2.rds")
 
 cluster7_conserved_markers <- FindConservedMarkers(annotation,
                                                    ident.1 = 7,
@@ -263,25 +265,25 @@ Idents(integrate.data) <- integrate.data$RNA_snn_res.0.2
 
 # Create a mapping of cluster IDs to cell type names
 integrate.data <- RenameIdents(object = integrate.data,
-  "0" = "Neurons",
-  "1" = "Glioblasts",
-  "2" = "Erythroid_progenitor_cells",
-  "3" = "Erythroid_progenitor_cells",
-  "4" = "Ciliated_cells",
-  "5" = "CD4+, alpha-beta T cell",
-  "6" = "Stem_cells",
-  "7" = "Neuronal_stem_Cells",
-  "8" = "ZBTB32+ B cell",
-  "9" = "Astrocytes",
-  "10" = "Myeloblasts",
-  "11" = "Glioblasts",
-  "12" = "Microglia",
-  "13" = "Endothelial cells",
-  "14" = "NA",
-  "15" = "Fibroblasts",
-  "16" = "Multi-ciliated epithelial cell",
-  "17" = "CD8+ T cell",
-  "18" = "CD8+ T cell"
+  "0" = "Astrocyte",
+  "1" = "Endothelial cell",
+  "2" = "Oligodendrocyte precursor cell",
+  "3" = "Oligodendrocyte",
+  "4" = "Glutamatergic neuron",
+  "5" = "Microglial cell",
+  "6" = "Pyramidal cell", #
+  "7" = "Gabaergic neuron",#
+  "8" = "Neuroblast",
+  "9" = "CD4+, alpha-beta T cell",
+  "10" = "Pyramidal Cell",
+  "11" = "Oligodendrocyte precursor cell",
+  "12" = "NA",
+  "13" = "Endothelial cell",
+  "14" = "Pericyte cell",
+  "15" = "Oligodendrocyte precursor cell",
+  "16" = "Microglial cell",
+  "17" = "Fibroblast",
+  "18" = "Astrocyte"
 )
 
 # Assign cell types based on cluster IDs
@@ -289,8 +291,8 @@ integrate.data$cell_type_manual <- Idents(integrate.data)
 
 # visualize data
 
-clusters <- DimPlot(integrate.data, reduction = 'umap', label = TRUE)
-celltype <- DimPlot(integrate.data, reduction = 'umap', group.by = 'cell_type_manual', label = TRUE)
+clusters <- DimPlot(integrate.data, reduction = 'umap_harmony', label = TRUE)
+celltype <- DimPlot(integrate.data, reduction = 'umap_harmony', group.by = 'cell_type_manual', label = TRUE)
 ggsave(filename = 'cell_annotation.png', plot = celltype)
 
 
@@ -299,4 +301,25 @@ ggsave(filename = 'cell_annotation.png', plot = celltype)
 
 # Optionally save the results to a file
 saveRDS(integrate.data, file ="annotated_cells.rds")
+
+
+-----------------------------------------------------------------------------------
+
+  
+##Mapping of the genes
+
+# Load the necessary library
+library(org.Hs.eg.db)
+
+# List of ENSG IDs
+ensg_ids <- row.names(cluster7_conserved_markers)
+
+# Map ENSG IDs to gene symbols
+gene_names <- AnnotationDbi::select(org.Hs.eg.db, keys = ensg_ids, keytype = "ENSEMBL", columns = "SYMBOL")
+
+# Print the results
+print(gene_names)
+gene_names_only <- gene_names$SYMBOL
+gene_names_only# Filter out the None values and structure them one under the other
+
 
