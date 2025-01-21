@@ -195,19 +195,19 @@ HCC_data.filtered <- FindClusters(HCC_data.filtered, resolution = c(0.2, 0.3, 0.
 HCC_data.filtered <- RunUMAP(HCC_data.filtered, dims = 1:16)
 
 plot_0.2 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.2", label = TRUE, reduction = "umap")
-ggsave("Results/dimplot_res_0.2.png", plot = plot_0.2, width = 8, height = 6)
+ggsave("Results/umap_res_0.2.png", plot = plot_0.2, width = 8, height = 6)
 plot_0.2
 
 plot_0.3 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.3", label = TRUE, reduction = "umap")
-ggsave("Results/dimplot_res_0.3.png", plot = plot_0.3, width = 8, height = 6)
+ggsave("Results/umap_res_0.3.png", plot = plot_0.3, width = 8, height = 6)
 plot_0.3
 
 plot_0.5 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.5", label = TRUE, reduction = "umap")
-ggsave("Results/dimplot_res_0.5.png", plot = plot_0.5, width = 8, height = 6)
+ggsave("Results/umap_res_0.5.png", plot = plot_0.5, width = 8, height = 6)
 plot_0.5
 
 plot_0.7 <- DimPlot(HCC_data.filtered, group.by = "RNA_snn_res.0.7", label = TRUE, reduction = "umap")
-ggsave("Results/dimplot_res_0.7.png", plot = plot_0.7, width = 8, height = 6)
+ggsave("Results/umap_res_0.7.png", plot = plot_0.7, width = 8, height = 6)
 plot_0.7
 
 # Set the Idents to resolution 0.2 since we decided to proceed with that (looks like artificial and too small clusters are created when using more than res 0.3)
@@ -347,7 +347,7 @@ HCC_data.filtered_no_doublets <- RunUMAP(HCC_data.filtered_no_doublets, dims = 1
 
 
 plot_0.2_doublets <- DimPlot(HCC_data.filtered_no_doublets, group.by = "RNA_snn_res.0.2", label = TRUE, reduction = "umap")
-ggsave("Results/dimplot_res_0.2_after_doublets.png", plot = plot_0.2_doublets, width = 8, height = 6)
+ggsave("Results/umap_res_0.2_after_doublets.png", plot = plot_0.2_doublets, width = 8, height = 6)
 plot_0.2_doublets
 
 # Save the filtered Seurat object
