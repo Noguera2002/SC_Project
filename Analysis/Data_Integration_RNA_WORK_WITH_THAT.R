@@ -349,3 +349,41 @@ cluster19_conserved_markers <- FindConservedMarkers(annotation,
                                                     grouping.var = "age_group",
                                                     only.pos = TRUE,min.pct = 0.25,  min.diff.pct = 0.25,
                                                     logfc.threshold = 0.25)
+
+
+### AFTER FINDING CONSERVED GENES ### CHANGE THE ONES THAT ARE HERE ### ASK ANTONI ###
+
+# Create a mapping of cluster IDs to cell type names
+annotation <- RenameIdents(object = annotation,
+                               "0" = "Neurons",
+                               "1" = "Glioblasts",
+                               "2" = "Erythroid_progenitor_cells",
+                               "3" = "Erythroid_progenitor_cells",
+                               "4" = "Ciliated_cells",
+                               "5" = "CD4+, alpha-beta T cell",
+                               "6" = "Stem_cells",
+                               "7" = "Neuronal_stem_Cells",
+                               "8" = "ZBTB32+ B cell",
+                               "9" = "Astrocytes",
+                               "10" = "Myeloblasts",
+                               "11" = "Glioblasts",
+                               "12" = "Microglia",
+                               "13" = "Endothelial cells",
+                               "14" = "NA",
+                               "15" = "Fibroblasts",
+                               "16" = "Multi-ciliated epithelial cell",
+                               "17" = "CD8+ T cell",
+                               "18" = "CD8+ T cell"
+)
+
+# Assign cell types based on cluster IDs
+annotation$cell_type_manual <- Idents(annotation)
+
+# visualize data
+
+clusters <- DimPlot(annotation, reduction = 'umap_harmony', label = TRUE)
+celltype <- DimPlot(annotation, reduction = 'umap_harmony', group.by = 'cell_type_manual', label = TRUE)
+ggsave(filename = 'cell_annotation.png', plot = celltype)
+
+# Optionally save the results to a file
+saveRDS(annotation, file ="Analysis/annotated_cells.rds")
